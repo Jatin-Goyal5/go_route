@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_route/map_help/userLocation.dart';
 import 'package:latlong/latlong.dart';
 import 'package:geolocation/geolocation.dart';
 class mapApi extends StatefulWidget {
@@ -9,6 +10,7 @@ class mapApi extends StatefulWidget {
 }
 
 class _mapApiState extends State<mapApi> {
+
   Widget list_Widget(){
     return Card(
 
@@ -35,9 +37,10 @@ class _mapApiState extends State<mapApi> {
   Widget build(BuildContext context) {
       return new Scaffold(
           body:new FlutterMap(
+            mapController: controller,
             options: new MapOptions(
-            center: new LatLng(51.5, -0.09),
-            zoom: 13.0
+            center: buildMap(),
+            zoom: 80.0
             ),
             layers: [
               new TileLayerOptions(
@@ -52,7 +55,7 @@ class _mapApiState extends State<mapApi> {
                   new Marker(
                     width: 80.0,
                     height: 80.0,
-                    point: new LatLng(51.5, -0.09),
+                    point: buildMap(),
                     builder: (ctx) => new Container(
                       child: IconButton(
                         icon:Icon(Icons.location_on),
@@ -87,6 +90,9 @@ class _mapApiState extends State<mapApi> {
           onPressed: (){
 
 //            LocationResult result =  Geolocation.currentLocation();
+          setState(() {
+            buildMap();
+          });
 
           },
         ),
