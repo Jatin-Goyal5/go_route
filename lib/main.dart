@@ -3,7 +3,7 @@ import 'package:go_route/screen_ui/map_ui.dart';
 import 'package:go_route/screen_ui/register_screen.dart';
 import 'package:go_route/screen_ui/splash_screen.dart';
 var routes = <String, WidgetBuilder>{
-  "/home": (BuildContext context) => mapApi(),
+  "/home": (BuildContext context) => MyHomePage(),
   "/intro": (BuildContext context) => Register_screen(),
 };
 void main() {
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: mapApi(),
+      home: Splash_Screen(),
       routes:routes ,
     );
   }

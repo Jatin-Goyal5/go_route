@@ -11,22 +11,25 @@ class Register_screen extends StatefulWidget {
 }
 
 class _Register_screenState extends State<Register_screen> {
+  final _myname = new TextEditingController();
+
+  final _password = new TextEditingController();
+  final _carno = new TextEditingController();
+
   user_detail user;
   Widget inputFields(String inputText){
-    return new TextField(
-      autofocus: true,
-      cursorColor: Colors.black,
-      style: TextStyle(color: Colors.black),
-      cursorWidth:2.0 ,
-      keyboardType:TextInputType.text ,
-      keyboardAppearance: Brightness.dark,
-      decoration: InputDecoration(
-          focusColor: Colors.redAccent,
-          border:OutlineInputBorder(
-            borderRadius: const BorderRadius.all(Radius.circular( 20.0)),
-          ),
-          prefixIcon: Icon(Icons.account_circle),
-          labelText: inputText,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: new  TextField(
+        keyboardType: TextInputType.datetime,
+        decoration: InputDecoration(
+            focusColor: Colors.redAccent,
+            border:OutlineInputBorder(
+              borderRadius: const BorderRadius.all(Radius.circular( 20.0)),
+            ),
+            prefixIcon: Icon(Icons.calendar_today,color: Colors.redAccent,),
+            labelText: inputText
+        ),
       ),
     );
 
@@ -36,38 +39,92 @@ class _Register_screenState extends State<Register_screen> {
     return Scaffold(
       appBar: AppBar(title: Text("GoRoute"),backgroundColor: Colors.redAccent,),
       backgroundColor: Colors.white,
-      body: new Column(
+      body: new ListView(
+        shrinkWrap: true,
         children:<Widget>[
-
-      ClipRect(child: inputFields("fullname")),
-          new SizedBox(
-            height: 20.0,
+          Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: new  TextField(
+              controller: _myname,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                  focusColor: Colors.redAccent,
+                  border:OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular( 20.0)),
+                  ),
+                  prefixIcon: Icon(Icons.person,color: Colors.redAccent,),
+                  labelText: "Fullname"
+              ),
+            ),
           ),
-          ClipRect(child: inputFields("Password")),
-          ClipRect(child: inputFields("plateno")),
-    ClipRect(child: inputFields("date")),
+          Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: new  TextField(
+              controller: _password,
+              keyboardType: TextInputType.visiblePassword,
+              decoration: InputDecoration(
+                  focusColor: Colors.redAccent,
+                  border:OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular( 20.0)),
+                  ),
+                  prefixIcon: Icon(Icons.vpn_key,color: Colors.redAccent,),
+                  labelText: "password"
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: new  TextField(
+
+              controller: _carno,
+              enabled: true,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                  focusColor: Colors.redAccent,
+                  border:OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular( 20.0)),
+                  ),
+                  prefixIcon: Icon(Icons.directions_car,color: Colors.redAccent,),
+                  labelText: "plateno"
+              ),
+            ),
+          ),
+    inputFields("date"),
           Padding(
             padding: const EdgeInsets.only(top:20.0),
-            child: new FlatButton(
-              color: Colors.red,
-              shape:  RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                  side: BorderSide(color: Colors.red)
-              ),
-              splashColor: Colors.greenAccent,
-              child:new Container(
+            child: Padding(
+              padding: const EdgeInsets.all(18.0),
+              child: new FlatButton(
 
-                height: 50.0,
-                width: 300.0,
-                  child:Center(
-                    child: Text("Submit",style: TextStyle(color: Colors.black,fontSize: 20.0
-                      ,fontStyle:FontStyle.normal ),),
-                  )
-              ),
+                color: Colors.red,
+                shape:  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                    side: BorderSide(color: Colors.red)
+                ),
+                splashColor: Colors.greenAccent,
+                child:new Container(
 
-              onPressed: (){
-                MyNavigator.goToHome(context);
-              },
+                  height: 50.0,
+                  width: 300.0,
+                    child:Center(
+                      child: Text("Submit",style: TextStyle(color: Colors.black,fontSize: 20.0
+                        ,fontStyle:FontStyle.normal ),),
+                    )
+                ),
+
+                onPressed: (){
+                  if(check()){
+                 user= new user_detail(_myname.text,_password.text,_carno.text);
+                 print(user.password);
+                  MyNavigator.goToHome(context);
+                  }else{
+                    print("incorrect");
+                    AlertDialog(
+                    title: Text("enter correct detail"),
+                    );
+                  }
+                },
+              ),
             ),
           )
 
@@ -75,5 +132,18 @@ class _Register_screenState extends State<Register_screen> {
         ]
       ),
     );
+  }
+
+  bool check(){
+    if(_myname.text == ""){
+      return false;
+    }
+    if(_password.text.length < 7){
+      return false;
+    }
+    if(_carno.text.length != 4){
+      return false;
+    }
+    return true;
   }
 }

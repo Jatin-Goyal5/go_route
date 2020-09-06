@@ -1,103 +1,126 @@
+import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:go_route/map_help/userLocation.dart';
-import 'package:latlong/latlong.dart';
-import 'package:geolocation/geolocation.dart';
-class mapApi extends StatefulWidget {
+import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+
+class MyHomePage extends StatefulWidget {
   @override
-  _mapApiState createState() => _mapApiState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _mapApiState extends State<mapApi> {
+class _MyHomePageState extends State<MyHomePage> {
 
-  Widget list_Widget(){
-    return Card(
+  StreamSubscription _locationSubscription;
+  Location _locationTracker = Location();
+  Marker marker;
+  Circle circle;
+  GoogleMapController _controller;
 
-      child: InkWell(
-        splashColor: Colors.blue.withAlpha(30),
-               onTap: () {
-                  print('Card tapped.');
-                },
-        child: new ListTile(
-          dense: true,
-          enabled: false,
-          leading: Icon(Icons.local_florist,color: Colors.green,),
-          title: Text("kazaranga park",
-            style: TextStyle(fontStyle: FontStyle.italic,
-                fontSize: 20.0,
-                color: Colors.red
-            ),
-          ),
-        ),
-      ),
-    );
+  static final CameraPosition initialLocation = CameraPosition(
+    target: LatLng(37.42796133580664, -122.085749655962),
+    zoom: 14.4746,
+  );
+
+  Future<Uint8List> getMarker() async {
+    ByteData byteData = await DefaultAssetBundle.of(context).load("assets/dot.png");
+    return byteData.buffer.asUint8List();
   }
+
+  void updateMarkerAndCircle(LocationData newLocalData, Uint8List imageData) {
+    LatLng latlng = LatLng(newLocalData.latitude, newLocalData.longitude);
+    const url = 'https://flutter-location-47366.firebaseio.com/location.json';
+    http.post(
+        url,body: jsonEncode({
+      'longitude':latlng.longitude,
+      'latitude':latlng.latitude,
+    }
+    )
+    );
+    this.setState(() {
+      marker = Marker(
+          markerId: MarkerId("home"),
+          position: latlng,
+          rotation: newLocalData.heading,
+          draggable: false,
+          zIndex: 2,
+          flat: true,
+          anchor: Offset(0.5, 0.5),
+          icon: BitmapDescriptor.fromBytes(imageData));
+      circle = Circle(
+          circleId: CircleId("circle"),
+          radius: newLocalData.accuracy,
+          zIndex: 1,
+          strokeColor: Colors.blue,
+          center: latlng,
+          fillColor: Colors.blue.withAlpha(70));
+    });
+  }
+
+  void getCurrentLocation() async {
+    try {
+
+      Uint8List imageData = await getMarker();
+      var location = await _locationTracker.getLocation();
+
+      updateMarkerAndCircle(location, imageData);
+
+      if (_locationSubscription != null) {
+        _locationSubscription.cancel();
+      }
+
+
+      _locationSubscription = _locationTracker.onLocationChanged().listen((newLocalData) {
+        if (_controller != null) {
+          _controller.animateCamera(CameraUpdate.newCameraPosition(new CameraPosition(
+              bearing: 192.8334901395799,
+              target: LatLng(newLocalData.latitude, newLocalData.longitude),
+              tilt: 0,
+              zoom: 18.00)));
+          updateMarkerAndCircle(newLocalData, imageData);
+        }
+      });
+
+    } on PlatformException catch (e) {
+      if (e.code == 'PERMISSION_DENIED') {
+        debugPrint("Permission Denied");
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_locationSubscription != null) {
+      _locationSubscription.cancel();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-      return new Scaffold(
-          body:new FlutterMap(
-            mapController: controller,
-            options: new MapOptions(
-            center: buildMap(),
-            zoom: 80.0
-            ),
-            layers: [
-              new TileLayerOptions(
-                urlTemplate: "https://api.mapbox.com/styles/v1/jatingoyal1234/cjzjkpp514cva1cqly9zt603i/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiamF0aW5nb3lhbDEyMzQiLCJhIjoiY2tlMXFramRqMDF6NjJybXNoM28zbGxjdiJ9.y8eZrBb0gEbf9E3VZXJE-A",
-                additionalOptions: {
-                'accessToken':'pk.eyJ1IjoiamF0aW5nb3lhbDEyMzQiLCJhIjoiY2tlMXFramRqMDF6NjJybXNoM28zbGxjdiJ9.y8eZrBb0gEbf9E3VZXJE-A',
-                'id':'mapbox.mapbox-streets-v7'
-                },
-              ),
-              new MarkerLayerOptions(
-                markers: [
-                  new Marker(
-                    width: 80.0,
-                    height: 80.0,
-                    point: buildMap(),
-                    builder: (ctx) => new Container(
-                      child: IconButton(
-                        icon:Icon(Icons.location_on),
-                          color: Colors.greenAccent,
-                          iconSize: 45.0,
-                        onPressed: (){
-                          showModalBottomSheet(
-                            context: context,
-                            builder: (builder){
-                              return Container(
-                                child:new ListView(
-                                  children: <Widget>[
-                                    list_Widget(),
-                                    list_Widget(),
-                                    list_Widget(),
-                                    list_Widget(),
-                                  ],
-                                ),
-                            );
-                            }
-                            );
-                          },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        floatingActionButton: FloatingActionButton(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("map"),
+      ),
+      body: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition: initialLocation,
+        markers: Set.of((marker != null) ? [marker] : []),
+        circles: Set.of((circle != null) ? [circle] : []),
+        onMapCreated: (GoogleMapController controller) {
+          _controller = controller;
+        },
+
+      ),
+      floatingActionButton: FloatingActionButton(
           child: Icon(Icons.location_searching),
-          onPressed: (){
-
-//            LocationResult result =  Geolocation.currentLocation();
-          setState(() {
-            buildMap();
-          });
-
-          },
-        ),
-      );
+          onPressed: () {
+            getCurrentLocation();
+          }),
+    );
   }
 }
-
-
